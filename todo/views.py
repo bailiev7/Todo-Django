@@ -43,6 +43,14 @@ def todo_home_list(request):
     return render(request, 'todo/todo_home_list.html', context)
 
 
+def privacy_policy(request):
+    return render(request, 'Privacy-terms/privacy_policy.html')
+
+
+def terms(request):
+    return render(request, 'Privacy-terms/terms.html')
+
+
 @login_required
 def todo_dashboard(request):
     edit_task = None

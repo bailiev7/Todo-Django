@@ -162,3 +162,17 @@ class PasswordResetTests(TestCase):
             form.fields['new_password1'].widget.attrs['placeholder'],
             'Новый пароль',
         )
+
+
+class LegalPageTests(TestCase):
+    def test_privacy_policy_page_is_available(self):
+        response = self.client.get(reverse('privacy_policy'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Политика конфиденциальности')
+
+    def test_terms_page_is_available(self):
+        response = self.client.get(reverse('terms'))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Пользовательское соглашение')

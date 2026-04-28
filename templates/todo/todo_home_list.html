@@ -1,6 +1,6 @@
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -113,6 +113,12 @@
                             Не имеете аккаунт?
                             <button type="button" data-tab-target="register">Создать аккаунт</button>
                         </p>
+                        <p class="legal-links">
+                            Используя сервис, вы соглашаетесь с
+                            <a href="{% url 'terms' %}">пользовательским соглашением</a>
+                            и
+                            <a href="{% url 'privacy_policy' %}">политикой конфиденциальности</a>.
+                        </p>
                     </form>
                 </section>
 
@@ -138,6 +144,12 @@
                         <p class="alt-link">
                             Уже есть аккаунт?
                             <button type="button" data-tab-target="login">Войти</button>
+                        </p>
+                        <p class="legal-links">
+                            Создавая аккаунт, вы принимаете
+                            <a href="{% url 'terms' %}">пользовательское соглашение</a>
+                            и
+                            <a href="{% url 'privacy_policy' %}">политику конфиденциальности</a>.
                         </p>
                     </form>
                 </section>

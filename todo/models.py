@@ -4,24 +4,6 @@ from django.db import models
 from django.utils import timezone
 
 
-class UserProfile(models.Model):
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='profile',
-    )
-    email = models.EmailField(blank=True)
-    bio = models.TextField(blank=True)
-    avatar = models.ImageField(upload_to='avatars/', blank=True)
-
-    class Meta:
-        verbose_name = 'Профиль пользователя'
-        verbose_name_plural = 'Профили пользователей'
-
-    def __str__(self):
-        return self.user.get_username()
-
-
 class Task(models.Model):
     class Status(models.TextChoices):
         TODO = 'todo', 'К выполнению'

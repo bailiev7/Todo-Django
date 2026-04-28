@@ -528,6 +528,21 @@ body {
     text-decoration: none;
 }
 
+.legal-links {
+    margin: 16px 0 0;
+    color: var(--muted);
+    font-size: 0.76rem;
+    line-height: 1.55;
+    text-align: center;
+}
+
+.legal-links a {
+    color: var(--ink);
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .auth-page {
     grid-template-columns: minmax(0, 520px);
     justify-content: center;

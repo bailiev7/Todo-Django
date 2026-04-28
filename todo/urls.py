@@ -7,6 +7,8 @@ from todo import views
 
 urlpatterns = [
     path('', views.todo_home_list, name='todo_home_list'),
+    path('privacy/', views.privacy_policy, name='privacy_policy'),
+    path('terms/', views.terms, name='terms'),
     path('tasks/', views.todo_dashboard, name='todo_dashboard'),
     path('logout/', views.todo_logout, name='todo_logout'),
     path(
