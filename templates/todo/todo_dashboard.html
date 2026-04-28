@@ -1,0 +1,198 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ваши задачи</title>
+    <link rel="stylesheet" href="{% static 'todo/css/todo_dashboard.css' %}?v=2">
+</head>
+<body>
+    <div class="wrap">
+        <header class="topbar">
+            <div>
+                <h1
+                    class="blur-text"
+                    data-blur-text
+                    data-delay="110"
+                    data-animate-by="words"
+                    data-direction="top"
+                    data-run-blur="{{ run_blur|yesno:'true,false' }}"
+                >
+                    Приветствую, {{ request.user.username }}!
+                </h1>
+                <p>Ваша область задач готова. Теперь здесь можно и добавлять новые задачи, и редактировать уже существующие прямо на одной странице.</p>
+            </div>
+            <a class="logout" href="{% url 'todo_logout' %}">Выйти</a>
+        </header>
+
+        {% if messages %}
+            <div class="flash-list">
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="grid">
+            <section class="panel composer">
+                <span class="eyebrow">{% if edit_task %}Edit mode{% else %}New task{% endif %}</span>
+                <h2>{% if edit_task %}Редактирование задачи{% else %}Добавить задачу{% endif %}</h2>
+                <p class="composer-copy">
+                    {% if edit_task %}
+                        Измените нужные поля и сохраните задачу. Если передумали, можно вернуться в режим создания новой задачи.
+                    {% else %}
+                        Укажите заголовок, описание, статус, приоритет и срок выполнения. Всё основное уже под рукой.
+                    {% endif %}
+                </p>
+
+                <form method="post" class="form-grid">
+                    {% csrf_token %}
+                    <input type="hidden" name="form_action" value="{% if edit_task %}update{% else %}create{% endif %}">
+                    {% if edit_task %}
+                        <input type="hidden" name="task_id" value="{{ edit_task.id }}">
+                    {% endif %}
+
+                    <div class="field-group">
+                        {{ task_form.title }}
+                        {% if task_form.title.errors %}
+                            <ul class="field-errorlist">
+                                {% for error in task_form.title.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="field-group">
+                        {{ task_form.description }}
+                        {% if task_form.description.errors %}
+                            <ul class="field-errorlist">
+                                {% for error in task_form.description.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="split">
+                        <div class="field-group">
+                            {{ task_form.status }}
+                            {% if task_form.status.errors %}
+                                <ul class="field-errorlist">
+                                    {% for error in task_form.status.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        <div class="field-group">
+                            {{ task_form.priority }}
+                            {% if task_form.priority.errors %}
+                                <ul class="field-errorlist">
+                                    {% for error in task_form.priority.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        {{ task_form.due_date }}
+                        {% if task_form.due_date.errors %}
+                            <ul class="field-errorlist">
+                                {% for error in task_form.due_date.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="actions">
+                        <button class="button" type="submit">
+                            {% if edit_task %}Сохранить изменения{% else %}Создать задачу{% endif %}
+                        </button>
+                        {% if edit_task %}
+                            <a class="button-secondary" href="{% url 'todo_dashboard' %}">Новая задача</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </section>
+
+            <section class="panel">
+                <div class="task-panel-top">
+                    <div>
+                        <h2>Ваши задачи</h2>
+                        <p>Фильтруйте список по статусу, быстро переключайте прогресс и удаляйте ненужные задачи.</p>
+                    </div>
+                </div>
+
+                <div class="filters">
+                    {% for value, label in status_choices %}
+                        <a
+                            class="filter-chip {% if status_filter == value %}active{% endif %}"
+                            href="{% url 'todo_dashboard' %}{% if value != 'all' %}?status={{ value }}{% endif %}"
+                        >
+                            {{ label }}
+                        </a>
+                    {% endfor %}
+                </div>
+
+                {% if tasks %}
+                    <div class="task-list">
+                        {% for task in tasks %}
+                            <article class="task">
+                                <div class="task-head">
+                                    <div>
+                                        <strong>{{ task.title }}</strong>
+                                        <span class="badge">{{ task.get_status_display }}</span>
+                                    </div>
+                                    <a class="task-action" href="{% url 'todo_dashboard' %}?edit={{ task.id }}">Редактировать</a>
+                                </div>
+                                {% if task.description %}
+                                    <p>{{ task.description }}</p>
+                                {% endif %}
+                                <div class="meta">
+                                    <span>Приоритет: {{ task.get_priority_display }}</span>
+                                    {% if task.due_date %}
+                                        <span>Срок: {{ task.due_date }}</span>
+                                    {% endif %}
+                                    {% if task.is_overdue %}
+                                        <span>Просрочено</span>
+                                    {% endif %}
+                                    <span>Обновлено: {{ task.updated_at|date:"d.m.Y H:i" }}</span>
+                                </div>
+
+                                <div class="task-actions">
+                                    <form method="post" class="inline-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_action" value="toggle_status">
+                                        <input type="hidden" name="task_id" value="{{ task.id }}">
+                                        <button class="task-action" type="submit">
+                                            {% if task.status == 'done' %}В процессе{% else %}Сделано{% endif %}
+                                        </button>
+                                    </form>
+
+                                    <form method="post" class="inline-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="form_action" value="delete">
+                                        <input type="hidden" name="task_id" value="{{ task.id }}">
+                                        <button class="task-action delete" type="submit">Удалить</button>
+                                    </form>
+                                </div>
+                            </article>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="empty">
+                        Пока задач нет. Создайте первую задачу в левой панели и начните наполнять свой task manager.
+                    </p>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+
+    <script src="{% static 'todo/js/todo_dashboard.js' %}?v=2"></script>
+</body>
+</html>

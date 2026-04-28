@@ -1,0 +1,150 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo Home</title>
+    <link rel="stylesheet" href="{% static 'todo/css/todo_home_list.css' %}?v=2">
+</head>
+<body data-active-form="{{ active_form|default:'login' }}">
+    <div class="background-stage">
+        <div class="slide one"></div>
+        <div class="slide two"></div>
+        <div class="slide three"></div>
+    </div>
+    <div class="noise"></div>
+
+    <main class="page">
+        <section class="hero">
+            <div>
+                <span class="eyebrow">Todo Home List</span>
+                <h1
+                    class="blur-text"
+                    data-blur-text
+                    data-text="Build calm around your day."
+                    data-delay="110"
+                    data-animate-by="words"
+                    data-direction="top"
+                >
+                    Build calm around your day.
+                </h1>
+                <p class="hero-copy">
+                    Минималистичный менеджер задач для тех, кто ценит простоту и эффективность. Здесь нет ничего лишнего — только вы и ваши дела.
+                </p>
+                <div class="hero-grid">
+                    <div class="hero-stats">
+                        <article class="stat-card">
+                            <span>Focus</span>
+                            <strong>01</strong>
+                        </article>
+                        <article class="stat-card">
+                            <span>Flow</span>
+                            <strong>85%</strong>
+                        </article>
+                        <article class="stat-card">
+                            <span>Rhythm</span>
+                            <strong>24/7</strong>
+                        </article>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-note">
+                <div>
+                    <strong>Приватность по умолчанию</strong>
+                    Ваши личные задачи остаются привязанными к вашей учетной записи и открываются только после аутентификации.
+                </div>
+                <div>
+                    <strong>Минимальное движение</strong>
+                    Мягкие переходы фона поддерживают живость страницы без отвлечения внимания.
+                </div>
+            </div>
+        </section>
+
+        <section class="auth-shell">
+            <div class="auth-inner">
+                <div class="auth-header">
+                    <div>
+                        <h2>Добро пожаловать!</h2>
+                        <p>
+                            Чтобы продолжить использование менеджера задач, войдите в свою учетную запись или создайте новую.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="auth-tabs" role="tablist" aria-label="Authentication">
+                    <button class="auth-tab" type="button" data-tab-target="login">Войти</button>
+                    <button class="auth-tab" type="button" data-tab-target="register">Создать аккаунт</button>
+                </div>
+
+                <div class="auth-progress">
+                    <div class="progress-meta">
+                        <span id="progress-label">Прогресс</span>
+                        <strong id="progress-value">0%</strong>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progress-fill"></div>
+                    </div>
+                </div>
+
+                <section class="form-panel" data-panel="login">
+                    <form method="post" class="form-card {% if login_error %}shake{% endif %}" data-form-kind="login">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="login">
+
+                        {% if login_form.non_field_errors %}
+                            <div class="form-errors">{{ login_form.non_field_errors }}</div>
+                        {% endif %}
+
+                        {% for field in login_form %}
+                            <div class="field-row">
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="field-error">{{ field.errors }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <button class="submit-btn" type="submit">Войти</button>
+                        <p class="alt-link compact">
+                            <a href="{% url 'password_reset' %}">Забыли пароль?</a>
+                        </p>
+                        <p class="alt-link">
+                            Не имеете аккаунт?
+                            <button type="button" data-tab-target="register">Создать аккаунт</button>
+                        </p>
+                    </form>
+                </section>
+
+                <section class="form-panel" data-panel="register">
+                    <form method="post" class="form-card {% if signup_error %}shake{% endif %}" data-form-kind="register">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_type" value="register">
+
+                        {% if signup_form.non_field_errors %}
+                            <div class="form-errors">{{ signup_form.non_field_errors }}</div>
+                        {% endif %}
+
+                        {% for field in signup_form %}
+                            <div class="field-row">
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="field-error">{{ field.errors }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <button class="submit-btn" type="submit">Создать аккаунт</button>
+                        <p class="alt-link">
+                            Уже есть аккаунт?
+                            <button type="button" data-tab-target="login">Войти</button>
+                        </p>
+                    </form>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <script src="{% static 'todo/js/todo_home_list.js' %}?v=2"></script>
+</body>
+</html>
