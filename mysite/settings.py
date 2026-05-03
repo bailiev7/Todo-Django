@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 import os
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,6 +28,15 @@ def env_bool(name, default=False):
 
 def env_list(name, default=''):
     return [item.strip() for item in env(name, default).split(',') if item.strip()]
+
+
+def env_decimal(name, default):
+    raw_value = env(name, default)
+
+    try:
+        return Decimal(str(raw_value))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise ValueError(f'Invalid decimal value for {name}: {raw_value!r}') from exc
 
 
 # Quick-start development settings - unsuitable for production
@@ -129,13 +139,19 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/6.0/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = env('DJANGO_LANGUAGE_CODE', 'ru-ru')
 
 TIME_ZONE = env('DJANGO_TIME_ZONE', 'Europe/Moscow')
 
 USE_I18N = True
 
 USE_TZ = True
+
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGIN_URL = '/'
+LOGIN_REDIRECT_URL = 'todo_dashboard'
+LOGOUT_REDIRECT_URL = 'todo_home_list'
 
 
 # Static files (CSS, JavaScript, Images)
@@ -160,3 +176,22 @@ EMAIL_HOST_PASSWORD = env('DJANGO_EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = env_bool('DJANGO_EMAIL_USE_TLS', False)
 EMAIL_USE_SSL = env_bool('DJANGO_EMAIL_USE_SSL', False)
 EMAIL_TIMEOUT = int(env('DJANGO_EMAIL_TIMEOUT', 15))
+
+TELEGRAM_BOT_TOKEN = env('TELEGRAM_BOT_TOKEN', '')
+TELEGRAM_BOT_USERNAME = env('TELEGRAM_BOT_USERNAME', '')
+TELEGRAM_WEBHOOK_SECRET = env('TELEGRAM_WEBHOOK_SECRET', '')
+
+YOOKASSA_SHOP_ID = env('YOOKASSA_SHOP_ID', '')
+YOOKASSA_SECRET_KEY = env('YOOKASSA_SECRET_KEY', '')
+YOOKASSA_API_URL = env('YOOKASSA_API_URL', 'https://api.yookassa.ru/v3')
+YOOKASSA_TIMEOUT = int(env('YOOKASSA_TIMEOUT', 10))
+YOOKASSA_SEND_RECEIPT = env_bool('YOOKASSA_SEND_RECEIPT', False)
+YOOKASSA_VAT_CODE = int(env('YOOKASSA_VAT_CODE', 1))
+YOOKASSA_PAYMENT_SUBJECT = env('YOOKASSA_PAYMENT_SUBJECT', 'service')
+YOOKASSA_WEBHOOK_IPS = env_list('YOOKASSA_WEBHOOK_IPS', '')
+
+DONATION_FAKE_GATEWAY = env_bool('DONATION_FAKE_GATEWAY', False)
+DONATION_CURRENCY = env('DONATION_CURRENCY', 'RUB')
+DONATION_MIN_AMOUNT = env_decimal('DONATION_MIN_AMOUNT', '50.00')
+DONATION_MAX_AMOUNT = env_decimal('DONATION_MAX_AMOUNT', '100000.00')
+DONATION_SUGGESTED_AMOUNTS = env_list('DONATION_SUGGESTED_AMOUNTS', '100,300,500,1000')

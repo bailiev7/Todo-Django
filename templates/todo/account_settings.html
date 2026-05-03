@@ -1,0 +1,112 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Настройки аккаунта</title>
+    <link rel="stylesheet" href="{% static 'todo/css/todo_dashboard.css' %}?v=3">
+</head>
+<body>
+    <div class="wrap">
+        <header class="topbar">
+            <div>
+                <h1>Настройки аккаунта</h1>
+                <p>Управляйте данными входа, паролем и Telegram-привязкой для восстановления доступа.</p>
+            </div>
+            <nav class="top-actions" aria-label="Навигация аккаунта">
+                <a class="logout" href="{% url 'todo_dashboard' %}">К задачам</a>
+                <a class="logout" href="{% url 'todo_logout' %}">Выйти</a>
+            </nav>
+        </header>
+
+        {% if messages %}
+            <div class="flash-list">
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="settings-stack">
+            <section class="panel settings-account-panel">
+                <span class="eyebrow">Account</span>
+                <h2>Данные аккаунта и пароль</h2>
+                <p class="composer-copy">
+                    Обновляйте данные входа и меняйте пароль в одном месте. Смена пароля не разлогинит текущую сессию.
+                </p>
+
+                <div class="settings-inner-grid">
+                    <form method="post" class="form-grid">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_action" value="account">
+
+                        <h3 class="settings-subtitle">Данные аккаунта</h3>
+                        {% for field in account_form %}
+                            <div class="field-group">
+                                {{ field }}
+                                {% if field.errors %}
+                                    <ul class="field-errorlist">
+                                        {% for error in field.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <button class="button" type="submit">Сохранить данные</button>
+                    </form>
+
+                    <form method="post" class="form-grid">
+                        {% csrf_token %}
+                        <input type="hidden" name="form_action" value="password">
+
+                        <h3 class="settings-subtitle">Смена пароля</h3>
+                        {% if password_form.non_field_errors %}
+                            <ul class="field-errorlist">
+                                {% for error in password_form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+
+                        {% for field in password_form %}
+                            <div class="field-group">
+                                {{ field }}
+                                {% if field.errors %}
+                                    <ul class="field-errorlist">
+                                        {% for error in field.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+
+                        <button class="button" type="submit">Изменить пароль</button>
+                    </form>
+                </div>
+            </section>
+
+            <section class="panel">
+                <span class="eyebrow">Telegram</span>
+                <h2>Восстановление через бота</h2>
+                {% if telegram_account %}
+                    <p class="composer-copy">
+                        Telegram привязан{% if telegram_account.username %}: @{{ telegram_account.username }}{% endif %}.
+                        Привязка создана {{ telegram_account.linked_at|date:"d.m.Y H:i" }}.
+                    </p>
+                    <a class="button-secondary" href="{% url 'telegram_link' %}">Обновить Telegram</a>
+                {% else %}
+                    <p class="composer-copy">
+                        Telegram пока не привязан. Без привязки бот не сможет отправить ссылку для сброса пароля.
+                    </p>
+                    <a class="button" href="{% url 'telegram_link' %}">Привязать Telegram</a>
+                {% endif %}
+            </section>
+        </div>
+    </div>
+    <script src="{% static 'todo/js/password_toggle.js' %}?v=3"></script>
+</body>
+</html>

@@ -5,35 +5,98 @@ const progressValue = document.getElementById('progress-value');
 const progressFill = document.getElementById('progress-fill');
 const progressLabel = document.getElementById('progress-label');
 const blurTextNodes = document.querySelectorAll('[data-blur-text]');
+const rotatingTextNodes = document.querySelectorAll('[data-rotating-text]');
 
-function enhancePasswordFields() {
-    document.querySelectorAll('input[type="password"]').forEach((input) => {
-        if (input.dataset.passwordEnhanced === 'true') return;
+function splitIntoCharacters(text) {
+    if (typeof Intl !== 'undefined' && Intl.Segmenter) {
+        const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+        return Array.from(segmenter.segment(text), (segment) => segment.segment);
+    }
 
-        const wrapper = document.createElement('div');
-        const button = document.createElement('button');
+    return Array.from(text);
+}
 
-        wrapper.className = 'password-field';
-        button.className = 'password-toggle';
-        button.type = 'button';
-        button.textContent = 'Показать';
-        button.setAttribute('aria-label', 'Показать пароль');
+function getStaggerDelay(index, total, staggerFrom, staggerDuration) {
+    if (staggerFrom === 'last') return (total - 1 - index) * staggerDuration;
+    if (staggerFrom === 'center') {
+        const center = Math.floor(total / 2);
+        return Math.abs(center - index) * staggerDuration;
+    }
+    if (staggerFrom === 'random') {
+        const randomIndex = Math.floor(Math.random() * total);
+        return Math.abs(randomIndex - index) * staggerDuration;
+    }
 
-        input.parentNode.insertBefore(wrapper, input);
-        wrapper.appendChild(input);
-        wrapper.appendChild(button);
-        input.dataset.passwordEnhanced = 'true';
+    const numericStart = Number(staggerFrom);
+    if (!Number.isNaN(numericStart)) return Math.abs(numericStart - index) * staggerDuration;
 
-        button.addEventListener('click', () => {
-            const isHidden = input.type === 'password';
-            input.type = isHidden ? 'text' : 'password';
-            button.textContent = isHidden ? 'Скрыть' : 'Показать';
-            button.setAttribute(
-                'aria-label',
-                isHidden ? 'Скрыть пароль' : 'Показать пароль'
-            );
-        });
+    return index * staggerDuration;
+}
+
+function buildRotatingLine(text, staggerFrom, staggerDuration) {
+    const line = document.createElement('span');
+    const word = document.createElement('span');
+    const characters = splitIntoCharacters(text);
+
+    line.className = 'rotating-text-line';
+    word.className = 'rotating-text-word';
+
+    characters.forEach((character, index) => {
+        const element = document.createElement('span');
+        element.className = 'rotating-text-element';
+        element.textContent = character;
+        element.style.setProperty(
+            '--rotate-delay',
+            `${getStaggerDelay(index, characters.length, staggerFrom, staggerDuration)}ms`
+        );
+        word.appendChild(element);
     });
+
+    line.appendChild(word);
+    return line;
+}
+
+function initRotatingText(node) {
+    const words = (node.dataset.rotatingWords || node.textContent || '')
+        .split(',')
+        .map((word) => word.trim())
+        .filter(Boolean);
+    const stage = node.querySelector('.rotating-text-stage') || node;
+    const srOnly = node.querySelector('.rotating-text-sr-only');
+    const interval = Number(node.dataset.rotationInterval || 2000);
+    const staggerFrom = node.dataset.staggerFrom || 'first';
+    const staggerDuration = Number(node.dataset.staggerDuration || 28);
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let currentIndex = 0;
+    let currentLine = null;
+
+    if (!words.length) return;
+
+    node.style.setProperty('--rotating-width', `${Math.max(...words.map((word) => word.length)) * 0.64}em`);
+    stage.textContent = '';
+
+    function render(index, exitingLine = null) {
+        const line = buildRotatingLine(words[index], staggerFrom, staggerDuration);
+        if (srOnly) srOnly.textContent = words[index];
+
+        if (exitingLine) {
+            exitingLine.classList.add('is-exiting');
+            window.setTimeout(() => exitingLine.remove(), 560);
+        }
+
+        stage.appendChild(line);
+        currentLine = line;
+    }
+
+    render(currentIndex);
+
+    if (reduceMotion || words.length === 1) return;
+
+    window.setInterval(() => {
+        const previousLine = currentLine;
+        currentIndex = currentIndex === words.length - 1 ? 0 : currentIndex + 1;
+        render(currentIndex, previousLine);
+    }, interval);
 }
 
 function initBlurText(node) {
@@ -136,5 +199,5 @@ document.querySelectorAll('form input').forEach((input) => {
 });
 
 blurTextNodes.forEach(initBlurText);
-enhancePasswordFields();
+rotatingTextNodes.forEach(initRotatingText);
 setActiveTab(getActiveKind());

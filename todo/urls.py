@@ -7,8 +7,20 @@ from todo import views
 
 urlpatterns = [
     path('', views.todo_home_list, name='todo_home_list'),
+    path('donate/', views.donation_create, name='donation_create'),
+    path('donate/return/<uuid:public_id>/', views.donation_return, name='donation_return'),
+    path('donate/webhook/', views.donation_webhook, name='donation_webhook'),
     path('privacy/', views.privacy_policy, name='privacy_policy'),
     path('terms/', views.terms, name='terms'),
+    path('telegram/link/', views.telegram_link, name='telegram_link'),
+    path('telegram/reset/', views.telegram_password_reset, name='telegram_password_reset'),
+    path(
+        'telegram/reset/done/',
+        views.telegram_password_reset_done,
+        name='telegram_password_reset_done',
+    ),
+    path('telegram/webhook/', views.telegram_webhook, name='telegram_webhook'),
+    path('account/settings/', views.account_settings, name='account_settings'),
     path('tasks/', views.todo_dashboard, name='todo_dashboard'),
     path('logout/', views.todo_logout, name='todo_logout'),
     path(

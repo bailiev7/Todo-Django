@@ -117,6 +117,44 @@
             border-top: 1px solid var(--line);
             font-size: 0.92rem;
         }
+
+        .site-footer {
+            width: min(980px, calc(100% - 32px));
+            margin: 0 auto 36px;
+            padding: 18px 24px;
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.92);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .site-footer p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .footer-contacts {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+        }
+
+        .footer-contacts a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+        }
+
+        @media (max-width: 640px) {
+            .site-footer {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
     </style>
 </head>
 <body>
@@ -236,5 +274,19 @@
             юридическую консультацию.
         </p>
     </main>
+
+    <footer class="site-footer">
+        <p>©2026 Todo. Все права защищены.</p>
+        <div class="footer-contacts">
+            <a href="mailto:a.baylyyew@05gmail.com" aria-label="Написать на email">
+                <span aria-hidden="true">✉</span>
+                <span>a.baylyyew@05gmail.com</span>
+            </a>
+            <a href="https://t.me/bailiev" target="_blank" rel="noopener noreferrer" aria-label="Открыть Telegram">
+                <span aria-hidden="true">Telegram</span>
+                <span>@bailiev</span>
+            </a>
+        </div>
+    </footer>
 </body>
 </html>

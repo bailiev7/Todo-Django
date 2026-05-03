@@ -1,0 +1,42 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Привязка Telegram</title>
+    <link rel="stylesheet" href="{% static 'todo/css/todo_home_list.css' %}?v=2">
+</head>
+<body>
+    <main class="page auth-page">
+        <section class="auth-shell reset-shell">
+            <div class="auth-inner">
+                <div class="auth-header">
+                    <div>
+                        <h2>Привязка Telegram</h2>
+                        <p>
+                            Это обязательный шаг после регистрации. Откройте бота по кнопке ниже и нажмите Start.
+                            Ссылка действует {{ expires_minutes }} минут.
+                        </p>
+                    </div>
+                </div>
+
+                {% if telegram_account %}
+                    <div class="form-errors">
+                        Telegram уже привязан. Новая привязка обновит текущий Telegram-аккаунт.
+                    </div>
+                {% endif %}
+
+                <a class="submit-link" href="{{ bot_url }}" target="_blank" rel="noopener">
+                    Открыть Telegram-бота
+                </a>
+
+                <p class="alt-link">
+                    После нажатия Start вернитесь в аккаунт.
+                    <a href="{% url 'todo_dashboard' %}">К задачам</a>
+                </p>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

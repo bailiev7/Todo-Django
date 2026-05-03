@@ -23,7 +23,11 @@
                 </h1>
                 <p>Ваша область задач готова. Теперь здесь можно и добавлять новые задачи, и редактировать уже существующие прямо на одной странице.</p>
             </div>
-            <a class="logout" href="{% url 'todo_logout' %}">Выйти</a>
+            <nav class="top-actions" aria-label="Аккаунт">
+                <a class="logout" href="{% url 'donation_create' %}">Донат</a>
+                <a class="logout" href="{% url 'account_settings' %}">Настройки</a>
+                <a class="logout" href="{% url 'todo_logout' %}">Выйти</a>
+            </nav>
         </header>
 
         {% if messages %}
@@ -35,6 +39,7 @@
         {% endif %}
 
         <div class="grid">
+            <div class="side-column">
             <section class="panel composer">
                 <span class="eyebrow">{% if edit_task %}Edit mode{% else %}New task{% endif %}</span>
                 <h2>{% if edit_task %}Редактирование задачи{% else %}Добавить задачу{% endif %}</h2>
@@ -120,6 +125,24 @@
                 </form>
             </section>
 
+            <section class="panel telegram-panel">
+                <span class="eyebrow">Security</span>
+                <h2>Telegram для восстановления</h2>
+                {% if request.user.telegram_account %}
+                    <p>
+                        Telegram привязан{% if request.user.telegram_account.username %}: @{{ request.user.telegram_account.username }}{% endif %}.
+                        Теперь можно получать ссылку сброса пароля через бота.
+                    </p>
+                    <a class="button-secondary" href="{% url 'telegram_link' %}">Обновить привязку</a>
+                {% else %}
+                    <p>
+                        Привяжите Telegram заранее, чтобы при потере пароля получить ссылку восстановления через бота.
+                    </p>
+                    <a class="button" href="{% url 'telegram_link' %}">Привязать Telegram</a>
+                {% endif %}
+            </section>
+            </div>
+
             <section class="panel">
                 <div class="task-panel-top">
                     <div>
@@ -132,7 +155,7 @@
                     {% for value, label in status_choices %}
                         <a
                             class="filter-chip {% if status_filter == value %}active{% endif %}"
-                            href="{% url 'todo_dashboard' %}{% if value != 'all' %}?status={{ value }}{% endif %}"
+                            href="{% url 'todo_dashboard' %}?status={{ value }}"
                         >
                             {{ label }}
                         </a>
@@ -142,46 +165,65 @@
                 {% if tasks %}
                     <div class="task-list">
                         {% for task in tasks %}
-                            <article class="task">
-                                <div class="task-head">
-                                    <div>
-                                        <strong>{{ task.title }}</strong>
+                            <details class="task {% if task.status == 'done' %}done{% endif %} {% if task.is_overdue %}overdue{% endif %}">
+                                <summary class="task-summary">
+                                    <span class="task-title">{{ task.title }}</span>
+                                    <span class="task-summary-meta">
+                                        {% if task.is_overdue %}
+                                            <span class="badge danger">Просрочено</span>
+                                        {% endif %}
                                         <span class="badge">{{ task.get_status_display }}</span>
+                                        <span class="task-chevron" aria-hidden="true"></span>
+                                    </span>
+                                </summary>
+
+                                <div class="task-details">
+                                    {% if task.description %}
+                                        <p>{{ task.description }}</p>
+                                    {% else %}
+                                        <p class="muted-note">Описание не добавлено.</p>
+                                    {% endif %}
+
+                                    <div class="meta">
+                                        <span>Приоритет: {{ task.get_priority_display }}</span>
+                                        {% if task.due_date %}
+                                            <span>Срок: {{ task.due_date }}</span>
+                                        {% else %}
+                                            <span>Срок не указан</span>
+                                        {% endif %}
+                                        <span>Обновлено: {{ task.updated_at|date:"d.m.Y H:i" }}</span>
                                     </div>
-                                    <a class="task-action" href="{% url 'todo_dashboard' %}?edit={{ task.id }}">Редактировать</a>
-                                </div>
-                                {% if task.description %}
-                                    <p>{{ task.description }}</p>
-                                {% endif %}
-                                <div class="meta">
-                                    <span>Приоритет: {{ task.get_priority_display }}</span>
-                                    {% if task.due_date %}
-                                        <span>Срок: {{ task.due_date }}</span>
-                                    {% endif %}
-                                    {% if task.is_overdue %}
-                                        <span>Просрочено</span>
-                                    {% endif %}
-                                    <span>Обновлено: {{ task.updated_at|date:"d.m.Y H:i" }}</span>
-                                </div>
 
-                                <div class="task-actions">
-                                    <form method="post" class="inline-form">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="form_action" value="toggle_status">
-                                        <input type="hidden" name="task_id" value="{{ task.id }}">
-                                        <button class="task-action" type="submit">
-                                            {% if task.status == 'done' %}В процессе{% else %}Сделано{% endif %}
-                                        </button>
-                                    </form>
+                                    <div class="task-actions">
+                                        <a class="task-action" href="{% url 'todo_dashboard' %}?edit={{ task.id }}">Редактировать</a>
 
-                                    <form method="post" class="inline-form">
-                                        {% csrf_token %}
-                                        <input type="hidden" name="form_action" value="delete">
-                                        <input type="hidden" name="task_id" value="{{ task.id }}">
-                                        <button class="task-action delete" type="submit">Удалить</button>
-                                    </form>
+                                        <form method="post" class="inline-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="form_action" value="toggle_status">
+                                            <input type="hidden" name="task_id" value="{{ task.id }}">
+                                            <button class="task-action" type="submit">
+                                                {% if task.status == 'done' %}В процессе{% else %}Сделано{% endif %}
+                                            </button>
+                                        </form>
+
+                                        {% if task.status != 'archived' %}
+                                            <form method="post" class="inline-form">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="form_action" value="archive">
+                                                <input type="hidden" name="task_id" value="{{ task.id }}">
+                                                <button class="task-action archive" type="submit">В архив</button>
+                                            </form>
+                                        {% endif %}
+
+                                        <form method="post" class="inline-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="form_action" value="delete">
+                                            <input type="hidden" name="task_id" value="{{ task.id }}">
+                                            <button class="task-action delete" type="submit">Удалить</button>
+                                        </form>
+                                    </div>
                                 </div>
-                            </article>
+                            </details>
                         {% endfor %}
                     </div>
                 {% else %}
@@ -193,6 +235,28 @@
         </div>
     </div>
 
+    <footer class="site-footer">
+        <p>©2026 Todo. Все права защищены.</p>
+        <div class="footer-contacts">
+            <a class="telegram" href="https://t.me/bailiev" target="_blank" rel="noopener noreferrer" aria-label="Telegram">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.82-1.084.508l-3-2.21-1.446 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.33-.373-.117l-6.869 4.332-2.97-.924c-.645-.213-.658-.645.135-.96l11.566-4.461c.54-.198 1.01.132.84.939z"/>
+                </svg>
+            </a>
+            <a class="email" href="mailto:a.baylyyew05@gmail.com" aria-label="Email">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 4H4C1.9 4 .9 5 .9 7l-.02 10c0 2 1 3 3 3h16c2 0 3-1 3-3V7c0-2-1-3-3-3zm0 4l-8 5-8-5V7l8 5 8-5v1z"/>
+                </svg>
+            </a>
+            <a class="x" href="https://x.com/bailiev_7" target="_blank" rel="noopener noreferrer" aria-label="X">
+                <svg viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24h-6.657l-5.215-6.817-5.95 6.817H2.423l7.723-8.835L1.482 2.25h6.844l4.915 6.514L18.244 2.25zM17.15 18.558h1.828L6.122 4.026H4.2l13.95 14.532z"/>
+                </svg>
+            </a>
+        </div>
+    </footer>
+ 
     <script src="{% static 'todo/js/todo_dashboard.js' %}?v=2"></script>
 </body>
 </html>
+

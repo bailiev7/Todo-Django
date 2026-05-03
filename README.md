@@ -67,3 +67,39 @@ DJANGO_EMAIL_BACKEND=django.core.mail.backends.console.EmailBackend
 ```
 
 For production, use a real SMTP provider and a verified sender domain.
+
+## Donations
+
+The donation flow uses YooKassa Redirect payments:
+
+1. Django creates a local `Donation`.
+2. Django creates a YooKassa payment with a unique idempotence key.
+3. The user is redirected to YooKassa and chooses a payment method.
+4. YooKassa returns the user to `/donate/return/<public_id>/`.
+5. Django verifies the payment status with YooKassa and shows the result.
+6. `/donate/webhook/` accepts YooKassa notifications and updates the local status.
+
+Required production settings:
+
+```env
+DONATION_FAKE_GATEWAY=False
+YOOKASSA_SHOP_ID=
+YOOKASSA_SECRET_KEY=
+```
+
+For local learning without a YooKassa test shop, keep:
+
+```env
+DONATION_FAKE_GATEWAY=True
+```
+
+In this mode the app creates a local mock payment, redirects through the same return page, marks the donation as paid, and never calls YooKassa.
+
+In the YooKassa dashboard, subscribe the public webhook URL to:
+
+```text
+payment.succeeded
+payment.canceled
+```
+
+For fiscal receipts, enable `YOOKASSA_SEND_RECEIPT=True` only after confirming the correct VAT and payment subject values for your business model.

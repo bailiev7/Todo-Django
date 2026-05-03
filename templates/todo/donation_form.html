@@ -1,0 +1,151 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Донат</title>
+    <link rel="stylesheet" href="{% static 'todo/css/todo_dashboard.css' %}?v=4">
+</head>
+<body>
+    <div class="wrap">
+        <header class="topbar">
+            <div>
+                <h1>Донат</h1>
+                <p>Поддержите Todo Home List любой удобной суммой.</p>
+            </div>
+            <nav class="top-actions" aria-label="Навигация">
+                {% if request.user.is_authenticated %}
+                    <a class="logout" href="{% url 'todo_dashboard' %}">К задачам</a>
+                {% endif %}
+                <a class="logout" href="{% url 'todo_home_list' %}">На главную</a>
+            </nav>
+        </header>
+
+        {% if messages %}
+            <div class="flash-list">
+                {% for message in messages %}
+                    <div class="flash">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="donation-layout">
+            <section class="panel donation-hero">
+                <span class="eyebrow">Support</span>
+                <h2>Спасибо, что помогаете проекту жить</h2>
+                <p class="composer-copy">
+                    {% if fake_gateway %}
+                        Включен локальный тестовый режим: приложение имитирует оплату и показывает полный платежный сценарий без внешнего сервиса.
+                    {% else %}
+                        Вы выбираете сумму и способ, ЮKassa принимает оплату, а приложение проверяет финальный статус платежа.
+                    {% endif %}
+                </p>
+            </section>
+
+            <section class="panel">
+                <form method="post" class="form-grid donation-form">
+                    {% csrf_token %}
+
+                    <div class="field-group">
+                        {{ form.amount }}
+                        {% if form.amount.errors %}
+                            <ul class="field-errorlist">
+                                {% for error in form.amount.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    {% if suggested_amounts %}
+                        <div class="amount-presets" aria-label="Быстрый выбор суммы">
+                            {% for amount in suggested_amounts %}
+                                <button class="amount-preset" type="button" data-donation-amount="{{ amount.value }}">
+                                    {{ amount.label }}
+                                </button>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <div>
+                        <h2 class="donation-subtitle">Способ оплаты</h2>
+                        <div class="payment-methods">
+                            {% with selected=form.payment_method.value|default:'any' %}
+                                {% for value, label in form.payment_method.field.choices %}
+                                    <label class="payment-method">
+                                        <input
+                                            type="radio"
+                                            name="{{ form.payment_method.html_name }}"
+                                            value="{{ value }}"
+                                            {% if selected == value %}checked{% endif %}
+                                        >
+                                        <span>{{ label }}</span>
+                                    </label>
+                                {% endfor %}
+                            {% endwith %}
+                        </div>
+                        {% if form.payment_method.errors %}
+                            <ul class="field-errorlist">
+                                {% for error in form.payment_method.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <div class="split">
+                        <div class="field-group">
+                            {{ form.donor_name }}
+                            {% if form.donor_name.errors %}
+                                <ul class="field-errorlist">
+                                    {% for error in form.donor_name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                        <div class="field-group">
+                            {{ form.donor_email }}
+                            {% if form.donor_email.errors %}
+                                <ul class="field-errorlist">
+                                    {% for error in form.donor_email.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="field-group">
+                        {{ form.message }}
+                        {% if form.message.errors %}
+                            <ul class="field-errorlist">
+                                {% for error in form.message.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+
+                    <button class="button donation-submit" type="submit">
+                        Перейти к оплате
+                    </button>
+
+                    {% if fake_gateway %}
+                        <p class="muted-note">
+                            Тестовый режим активен: реальные деньги не списываются, ЮKassa не вызывается.
+                        </p>
+                    {% elif not payment_configured %}
+                        <p class="muted-note">
+                            Сейчас платежи отключены: в окружении нет ключей ЮKassa.
+                        </p>
+                    {% endif %}
+                </form>
+            </section>
+        </div>
+    </div>
+
+    <script src="{% static 'todo/js/donation.js' %}?v=1"></script>
+</body>
+</html>
