@@ -195,3 +195,16 @@ DONATION_CURRENCY = env('DONATION_CURRENCY', 'RUB')
 DONATION_MIN_AMOUNT = env_decimal('DONATION_MIN_AMOUNT', '50.00')
 DONATION_MAX_AMOUNT = env_decimal('DONATION_MAX_AMOUNT', '100000.00')
 DONATION_SUGGESTED_AMOUNTS = env_list('DONATION_SUGGESTED_AMOUNTS', '100,300,500,1000')
+
+LOGGING = {
+    'version': 1,
+    'handlers': {
+        'console': {'class': 'logging.StreamHandler'},
+    },
+    'loggers': {
+        'django.db.backends': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}
