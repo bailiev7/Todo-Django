@@ -121,11 +121,14 @@ def todo_home_list(request):
                 user = login_form.get_user()
                 login(request, user)
                 messages.success(request, 'С возвращением!')
-                if settings.TELEGRAM_BOT_USERNAME and not hasattr(user, 'telegram_account'):
-                    messages.info(
-                        request,
-                        'Привяжите Telegram, чтобы получать ссылки для сброса пароля через бота.',
-                    )
+                if settings.TELEGRAM_BOT_USERNAME:
+                    try:
+                        user.telegram_account
+                    except TelegramAccount.DoesNotExist:
+                        messages.info(
+                            request,
+                            'Привяжите Telegram, чтобы получать ссылки для сброса пароля через бота.',
+                        )
                 return redirect(f"{reverse('todo_dashboard')}?welcome=1")
 
     context = {
@@ -288,25 +291,31 @@ def telegram_password_reset(request):
             .first()
         )
 
-        if user and hasattr(user, 'telegram_account'):
-            uid = urlsafe_base64_encode(force_bytes(user.pk))
-            token = default_token_generator.make_token(user)
-            reset_url = request.build_absolute_uri(
-                reverse(
-                    'password_reset_confirm',
-                    kwargs={'uidb64': uid, 'token': token},
-                )
-            )
-            text = (
-                '✅ Запрошен сброс пароля для Todo Home List.\n\n'
-                f'Откройте ссылку и задайте новый пароль:\n{reset_url}\n\n'
-                'Если вы не запрашивали сброс пароля, просто проигнорируйте это сообщение.'
-            )
-
+        if user:
             try:
-                send_telegram_message(user.telegram_account.chat_id, text)
-            except TelegramSendError:
-                pass
+                telegram_account = user.telegram_account
+            except TelegramAccount.DoesNotExist:
+                telegram_account = None
+
+            if telegram_account:
+                uid = urlsafe_base64_encode(force_bytes(user.pk))
+                token = default_token_generator.make_token(user)
+                reset_url = request.build_absolute_uri(
+                    reverse(
+                        'password_reset_confirm',
+                        kwargs={'uidb64': uid, 'token': token},
+                    )
+                )
+                text = (
+                    '✅ Запрошен сброс пароля для Todo Home List.\n\n'
+                    f'Откройте ссылку и задайте новый пароль:\n{reset_url}\n\n'
+                    'Если вы не запрашивали сброс пароля, просто проигнорируйте это сообщение.'
+                )
+
+                try:
+                    send_telegram_message(telegram_account.chat_id, text)
+                except TelegramSendError:
+                    pass
 
         return redirect('telegram_password_reset_done')
 
@@ -422,11 +431,14 @@ def account_settings(request):
 
 @login_required
 def todo_dashboard(request):
-    if settings.TELEGRAM_BOT_USERNAME and not hasattr(request.user, 'telegram_account'):
-        messages.info(
-            request,
-            'Telegram не привязан. Задачи доступны, а восстановление пароля через бота можно включить в настройках аккаунта.',
-        )
+    if settings.TELEGRAM_BOT_USERNAME:
+        try:
+            request.user.telegram_account
+        except TelegramAccount.DoesNotExist:
+            messages.info(
+                request,
+                'Telegram не привязан. Задачи доступны, а восстановление пароля через бота можно включить в настройках аккаунта.',
+            )
 
     edit_task = None
     status_filter = request.GET.get('status', Task.Status.TODO)

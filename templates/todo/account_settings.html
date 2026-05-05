@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Настройки аккаунта</title>
     <link rel="stylesheet" href="{% static 'todo/css/todo_dashboard.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'todo/css/cookie-consent.css' %}">
 </head>
 <body>
     <div class="wrap">
@@ -108,5 +109,20 @@
         </div>
     </div>
     <script src="{% static 'todo/js/password_toggle.js' %}?v=3"></script>
+    <script src="{% static 'todo/js/cookie-consent.js' %}"></script>
+
+    <div id="cookie-consent-banner" class="cookie-consent hidden">
+        <div class="cookie-consent-text">
+            <p>
+                Мы используем файлы cookie для улучшения вашего опыта на сайте.
+                Нажимая "Принять", вы соглашаетесь с использованием cookies.
+                Подробнее в <a href="{% url 'privacy_policy' %}">политике конфиденциальности</a>.
+            </p>
+        </div>
+        <div class="cookie-consent-actions">
+            <button id="cookie-consent-decline" class="cookie-consent-decline">Отклонить</button>
+            <button id="cookie-consent-accept" class="cookie-consent-accept">Принять</button>
+        </div>
+    </div>
 </body>
 </html>
