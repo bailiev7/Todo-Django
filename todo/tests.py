@@ -215,6 +215,7 @@ class DonationFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Донат')
+        self.assertNotContains(response, 'Все доступные способы')
 
     @override_settings(YOOKASSA_SHOP_ID='shop-id', YOOKASSA_SECRET_KEY='secret-key')
     @patch('todo.views.get_payment_client')
@@ -255,7 +256,7 @@ class DonationFlowTests(TestCase):
             reverse('donation_create'),
             {
                 'amount': '100.00',
-                'payment_method': Donation.PaymentMethod.ANY,
+                'payment_method': Donation.PaymentMethod.SBP,
                 'donor_name': 'Local Tester',
                 'donor_email': 'local@example.com',
                 'message': '',
@@ -370,8 +371,12 @@ class TelegramPasswordResetTests(TestCase):
 
         response = self.client.get(reverse('todo_dashboard'))
 
-        self.assertRedirects(response, reverse('telegram_link'))
+        self.assertEqual(response.status_code, 200)
 
+    @override_settings(
+        TELEGRAM_BOT_TOKEN='test-token',
+        TELEGRAM_WEBHOOK_SECRET='test-secret',
+    )
     def test_telegram_webhook_links_account_from_start_token(self):
         raw_token = 'secure-token'
         TelegramLinkToken.objects.create(
@@ -396,6 +401,7 @@ class TelegramPasswordResetTests(TestCase):
                 }
             ),
             content_type='application/json',
+            HTTP_X_TELEGRAM_BOT_API_SECRET_TOKEN='test-secret',
         )
 
         self.assertEqual(response.status_code, 200)
@@ -407,8 +413,8 @@ class TelegramPasswordResetTests(TestCase):
             ).exists()
         )
 
-    @patch('todo.views.send_telegram_message')
-    def test_telegram_reset_sends_link_to_linked_chat(self, mocked_send):
+    @patch('todo.views.send_telegram_message_task.delay')
+    def test_telegram_reset_sends_link_to_linked_chat(self, mocked_delay):
         TelegramAccount.objects.create(user=self.user, chat_id='123456789')
 
         response = self.client.post(
@@ -417,8 +423,8 @@ class TelegramPasswordResetTests(TestCase):
         )
 
         self.assertRedirects(response, reverse('telegram_password_reset_done'))
-        mocked_send.assert_called_once()
-        self.assertIn('/reset/', mocked_send.call_args.args[1])
+        mocked_delay.assert_called_once()
+        self.assertIn('/reset/', mocked_delay.call_args.args[1])
 
 
 class AccountSettingsTests(TestCase):
@@ -436,6 +442,7 @@ class AccountSettingsTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Настройки аккаунта')
+        self.assertContains(response, 'Сбросить пароль через бота')
 
     def test_can_update_account_data(self):
         response = self.client.post(
@@ -469,3 +476,13 @@ class AccountSettingsTests(TestCase):
 
         dashboard_response = self.client.get(reverse('todo_dashboard'))
         self.assertEqual(dashboard_response.status_code, 200)
+
+    @override_settings(TELEGRAM_BOT_TOKEN='test-token')
+    @patch('todo.views.send_telegram_message_task.delay')
+    def test_can_send_password_reset_to_linked_telegram(self, mocked_delay):
+        response = self.client.post(reverse('account_telegram_password_reset'))
+
+        self.assertRedirects(response, reverse('account_settings'))
+        mocked_delay.assert_called_once()
+        self.assertEqual(mocked_delay.call_args.args[0], '111222333')
+        self.assertIn('/reset/', mocked_delay.call_args.args[1])

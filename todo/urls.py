@@ -20,6 +20,11 @@ urlpatterns = [
         name='telegram_password_reset_done',
     ),
     path('telegram/webhook/', views.telegram_webhook, name='telegram_webhook'),
+    path(
+        'account/settings/telegram-reset/',
+        views.account_telegram_password_reset,
+        name='account_telegram_password_reset',
+    ),
     path('account/settings/', views.account_settings, name='account_settings'),
     path('tasks/', views.todo_dashboard, name='todo_dashboard'),
     path('logout/', views.todo_logout, name='todo_logout'),

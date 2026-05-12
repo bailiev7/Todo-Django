@@ -98,7 +98,13 @@
                         Telegram привязан{% if telegram_account.username %}: @{{ telegram_account.username }}{% endif %}.
                         Привязка создана {{ telegram_account.linked_at|date:"d.m.Y H:i" }}.
                     </p>
-                    <a class="button-secondary" href="{% url 'telegram_link' %}">Обновить Telegram</a>
+                    <div class="actions">
+                        <form method="post" action="{% url 'account_telegram_password_reset' %}">
+                            {% csrf_token %}
+                            <button class="button" type="submit">Сбросить пароль через бота</button>
+                        </form>
+                        <a class="button-secondary" href="{% url 'telegram_link' %}">Обновить Telegram</a>
+                    </div>
                 {% else %}
                     <p class="composer-copy">
                         Telegram пока не привязан. Без привязки бот не сможет отправить ссылку для сброса пароля.

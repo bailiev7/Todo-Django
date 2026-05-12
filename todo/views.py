@@ -32,7 +32,7 @@ from todo.forms import (
 )
 from todo.models import Donation, Task, TelegramAccount, TelegramLinkToken
 from todo.payments import PaymentGatewayError, get_payment_client
-from todo.telegram import TelegramSendError, send_telegram_message
+from todo.tasks import send_telegram_message_task
 
 
 def token_hash(value):
@@ -280,6 +280,28 @@ def telegram_link(request):
     )
 
 
+def build_telegram_password_reset_text(user, request):
+    uid = urlsafe_base64_encode(force_bytes(user.pk))
+    token = default_token_generator.make_token(user)
+    reset_url = request.build_absolute_uri(
+        reverse(
+            'password_reset_confirm',
+            kwargs={'uidb64': uid, 'token': token},
+        )
+    )
+
+    return (
+        '✅ Запрошен сброс пароля для Todo Home List.\n\n'
+        f'Откройте ссылку и задайте новый пароль:\n{reset_url}\n\n'
+        'Если вы не запрашивали сброс пароля, просто проигнорируйте это сообщение.'
+    )
+
+
+def send_telegram_password_reset_link(user, chat_id, request):
+    text = build_telegram_password_reset_text(user, request)
+    send_telegram_message_task.delay(chat_id, text)
+
+
 def telegram_password_reset(request):
     form = TelegramPasswordResetForm(request.POST or None)
 
@@ -298,24 +320,11 @@ def telegram_password_reset(request):
                 telegram_account = None
 
             if telegram_account:
-                uid = urlsafe_base64_encode(force_bytes(user.pk))
-                token = default_token_generator.make_token(user)
-                reset_url = request.build_absolute_uri(
-                    reverse(
-                        'password_reset_confirm',
-                        kwargs={'uidb64': uid, 'token': token},
-                    )
+                send_telegram_password_reset_link(
+                    user,
+                    telegram_account.chat_id,
+                    request,
                 )
-                text = (
-                    '✅ Запрошен сброс пароля для Todo Home List.\n\n'
-                    f'Откройте ссылку и задайте новый пароль:\n{reset_url}\n\n'
-                    'Если вы не запрашивали сброс пароля, просто проигнорируйте это сообщение.'
-                )
-
-                try:
-                    send_telegram_message(telegram_account.chat_id, text)
-                except TelegramSendError:
-                    pass
 
         return redirect('telegram_password_reset_done')
 
@@ -346,13 +355,10 @@ def telegram_webhook(request):
 
     if not text.startswith('/start '):
         if chat.get('id'):
-            try:
-                send_telegram_message(
-                    chat['id'],
-                    'Откройте ссылку привязки Telegram из личного кабинета Todo Home List.',
-                )
-            except TelegramSendError:
-                pass
+            send_telegram_message_task.delay(
+                chat['id'],
+                'Откройте ссылку привязки Telegram из личного кабинета Todo Home List.',
+            )
         return JsonResponse({'ok': True})
 
     raw_token = text.split(maxsplit=1)[1].strip()
@@ -360,13 +366,10 @@ def telegram_webhook(request):
 
     if not link_token or not link_token.is_active:
         if chat.get('id'):
-            try:
-                send_telegram_message(
-                    chat['id'],
-                    'Ссылка привязки недействительна или устарела. Создайте новую ссылку в аккаунте.',
-                )
-            except TelegramSendError:
-                pass
+            send_telegram_message_task.delay(
+                chat['id'],
+                'Ссылка привязки недействительна или устарела. Создайте новую ссылку в аккаунте.',
+            )
         return JsonResponse({'ok': True})
 
     TelegramAccount.objects.filter(chat_id=str(chat.get('id'))).exclude(
@@ -383,15 +386,40 @@ def telegram_webhook(request):
     link_token.used_at = timezone.now()
     link_token.save(update_fields=['used_at'])
 
-    try:
-        send_telegram_message(
-            chat['id'],
-            '✅ Telegram успешно привязан к аккаунту Todo Home List. Теперь можно получать ссылки для сброса пароля здесь.',
-        )
-    except TelegramSendError:
-        pass
+    send_telegram_message_task.delay(
+        chat['id'],
+        '✅ Telegram успешно привязан к аккаунту Todo Home List. Теперь можно получать ссылки для сброса пароля здесь.',
+    )
 
     return JsonResponse({'ok': True})
+
+
+@login_required
+@require_POST
+def account_telegram_password_reset(request):
+    try:
+        telegram_account = request.user.telegram_account
+    except TelegramAccount.DoesNotExist:
+        messages.error(
+            request,
+            'Сначала привяжите Telegram, чтобы бот мог отправить ссылку сброса пароля.',
+        )
+        return redirect('account_settings')
+
+    if not settings.TELEGRAM_BOT_TOKEN:
+        messages.error(request, 'Telegram bot пока не настроен.')
+        return redirect('account_settings')
+
+    send_telegram_password_reset_link(
+        request.user,
+        telegram_account.chat_id,
+        request,
+    )
+    messages.success(
+        request,
+        'Ссылка для сброса пароля отправлена в привязанный Telegram.',
+    )
+    return redirect('account_settings')
 
 
 @login_required

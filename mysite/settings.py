@@ -36,7 +36,8 @@ def env_decimal(name, default):
     try:
         return Decimal(str(raw_value))
     except (InvalidOperation, TypeError, ValueError) as exc:
-        raise ValueError(f'Invalid decimal value for {name}: {raw_value!r}') from exc
+        raise ValueError(
+            f'Invalid decimal value for {name}: {raw_value!r}') from exc
 
 
 # Quick-start development settings - unsuitable for production
@@ -168,7 +169,8 @@ EMAIL_BACKEND = env(
     'DJANGO_EMAIL_BACKEND',
     'django.core.mail.backends.console.EmailBackend',
 )
-DEFAULT_FROM_EMAIL = env('DJANGO_DEFAULT_FROM_EMAIL', 'Todo Home List <noreply@localhost>')
+DEFAULT_FROM_EMAIL = env('DJANGO_DEFAULT_FROM_EMAIL',
+                         'Todo Home List <noreply@localhost>')
 EMAIL_HOST = env('DJANGO_EMAIL_HOST', 'localhost')
 EMAIL_PORT = int(env('DJANGO_EMAIL_PORT', 25))
 EMAIL_HOST_USER = env('DJANGO_EMAIL_HOST_USER', '')
@@ -194,17 +196,20 @@ DONATION_FAKE_GATEWAY = env_bool('DONATION_FAKE_GATEWAY', False)
 DONATION_CURRENCY = env('DONATION_CURRENCY', 'RUB')
 DONATION_MIN_AMOUNT = env_decimal('DONATION_MIN_AMOUNT', '50.00')
 DONATION_MAX_AMOUNT = env_decimal('DONATION_MAX_AMOUNT', '100000.00')
-DONATION_SUGGESTED_AMOUNTS = env_list('DONATION_SUGGESTED_AMOUNTS', '100,300,500,1000')
+DONATION_SUGGESTED_AMOUNTS = env_list(
+    'DONATION_SUGGESTED_AMOUNTS', '100,300,500,1000')
 
-LOGGING = {
-    'version': 1,
-    'handlers': {
-        'console': {'class': 'logging.StreamHandler'},
-    },
-    'loggers': {
-        'django.db.backends': {
-            'handlers': ['console'],
-            'level': 'DEBUG',
-        },
-    },
-}
+CELERY_BROKER_URL = env('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/0')
+CELERY_RESULT_BACKEND = env('CELERY_RESULT_BACKEND',
+                            'redis://127.0.0.1:6379/0')
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = TIME_ZONE
+CELERY_TASK_TIME_LIMIT = 30 * 60 
+CELERY_TASK_SOFT_TIME_LIMIT = 25 * 60  
+CELERY_RESULT_EXPIRES = 3600 
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_ACKS_LATE = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = 1
+

@@ -17,6 +17,20 @@ services:
       timeout: 5s
       retries: 10
 
+  redis:
+    image: redis:7-alpine
+    container_name: mysite_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   web:
     build:
       context: .
@@ -45,6 +59,7 @@ services:
       DJANGO_EMAIL_TIMEOUT: ${DJANGO_EMAIL_TIMEOUT:-15}
       TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
       TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
       YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
       YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
       YOOKASSA_API_URL: ${YOOKASSA_API_URL:-https://api.yookassa.ru/v3}
@@ -57,6 +72,8 @@ services:
       DONATION_MIN_AMOUNT: ${DONATION_MIN_AMOUNT:-50.00}
       DONATION_MAX_AMOUNT: ${DONATION_MAX_AMOUNT:-100000.00}
       DONATION_SUGGESTED_AMOUNTS: ${DONATION_SUGGESTED_AMOUNTS:-100,300,500,1000}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
       POSTGRES_DB: ${POSTGRES_DB:-mysite}
       POSTGRES_USER: ${POSTGRES_USER:-mysite}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
@@ -64,6 +81,8 @@ services:
       POSTGRES_PORT: 5432
     depends_on:
       db:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   nginx:
@@ -79,7 +98,78 @@ services:
     depends_on:
       - web
 
+  celery:
+    build:
+      context: .
+    container_name: mysite_celery
+    restart: unless-stopped
+    entrypoint: ["sh", "/app/entrypoint.sh"]
+    command: celery -A mysite worker --loglevel=info --concurrency=4
+    volumes:
+      - .:/app
+    environment:
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-change-me}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://127.0.0.1,http://localhost}
+      DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-Europe/Moscow}
+      DJANGO_EMAIL_BACKEND: ${DJANGO_EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+      DJANGO_DEFAULT_FROM_EMAIL: ${DJANGO_DEFAULT_FROM_EMAIL:-Todo Home List <noreply@localhost>}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      POSTGRES_DB: ${POSTGRES_DB:-mysite}
+      POSTGRES_USER: ${POSTGRES_USER:-mysite}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    depends_on:
+      - db
+      - redis
+      - web
+
+  flower:
+    build:
+      context: .
+    container_name: mysite_flower
+    restart: unless-stopped
+    entrypoint: ["sh", "/app/entrypoint.sh"]
+    command: celery -A mysite flower --address=0.0.0.0 --port=5555
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    volumes:
+      - .:/app
+    environment:
+      DJANGO_DEBUG: ${DJANGO_DEBUG:-True}
+      DJANGO_SECRET_KEY: ${DJANGO_SECRET_KEY:-django-insecure-change-me}
+      DJANGO_ALLOWED_HOSTS: ${DJANGO_ALLOWED_HOSTS:-localhost,127.0.0.1}
+      DJANGO_CSRF_TRUSTED_ORIGINS: ${DJANGO_CSRF_TRUSTED_ORIGINS:-http://127.0.0.1,http://localhost}
+      DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-Europe/Moscow}
+      DJANGO_EMAIL_BACKEND: ${DJANGO_EMAIL_BACKEND:-django.core.mail.backends.console.EmailBackend}
+      DJANGO_DEFAULT_FROM_EMAIL: ${DJANGO_DEFAULT_FROM_EMAIL:-Todo Home List <noreply@localhost>}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+      YOOKASSA_SHOP_ID: ${YOOKASSA_SHOP_ID:-}
+      YOOKASSA_SECRET_KEY: ${YOOKASSA_SECRET_KEY:-}
+      CELERY_BROKER_URL: ${CELERY_BROKER_URL:-redis://redis:6379/0}
+      CELERY_RESULT_BACKEND: ${CELERY_RESULT_BACKEND:-redis://redis:6379/0}
+      POSTGRES_DB: ${POSTGRES_DB:-mysite}
+      POSTGRES_USER: ${POSTGRES_USER:-mysite}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-me}
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    depends_on:
+      - db
+      - redis
+      - celery
+
 volumes:
   postgres_data:
+  redis_data:
   static_volume:
   media_volume:

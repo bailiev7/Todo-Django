@@ -244,6 +244,12 @@ class TaskForm(forms.ModelForm):
 
 
 class DonationForm(forms.ModelForm):
+    PAYMENT_METHOD_CHOICES = (
+        (Donation.PaymentMethod.BANK_CARD, Donation.PaymentMethod.BANK_CARD.label),
+        (Donation.PaymentMethod.SBP, Donation.PaymentMethod.SBP.label),
+        (Donation.PaymentMethod.YOO_MONEY, Donation.PaymentMethod.YOO_MONEY.label),
+    )
+
     amount = forms.DecimalField(
         min_value=Decimal('1.00'),
         max_digits=10,
@@ -295,6 +301,11 @@ class DonationForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['payment_method'].choices = self.PAYMENT_METHOD_CHOICES
+        self.fields['payment_method'].initial = Donation.PaymentMethod.BANK_CARD
+        if not self.is_bound:
+            self.initial.setdefault('payment_method', Donation.PaymentMethod.BANK_CARD)
+
         self.fields['amount'].min_value = settings.DONATION_MIN_AMOUNT
         self.fields['amount'].max_value = settings.DONATION_MAX_AMOUNT
         self.fields['amount'].widget.attrs.update(
@@ -303,7 +314,6 @@ class DonationForm(forms.ModelForm):
                 'max': str(self.fields['amount'].max_value),
             }
         )
-        self.fields['payment_method'].choices = Donation.PaymentMethod.choices
 
     def clean_amount(self):
         amount = self.cleaned_data['amount']

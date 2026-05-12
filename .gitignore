@@ -1,6 +1,8 @@
 .DS_Store
+.kilo
 
 # Environment and local settings
+
 .env
 .env.*
 !.env.example

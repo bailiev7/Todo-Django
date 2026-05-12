@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Донат</title>
-    <link rel="stylesheet" href="{% static 'todo/css/todo_dashboard.css' %}?v=4">
+    <link rel="stylesheet" href="{% static 'todo/css/todo_dashboard.css' %}?v=5">
     <link rel="stylesheet" href="{% static 'todo/css/cookie-consent.css' %}">
 </head>
 <body>
@@ -69,10 +69,10 @@
                         </div>
                     {% endif %}
 
-                    <div>
+                    <div class="payment-section" data-payment-section>
                         <h2 class="donation-subtitle">Способ оплаты</h2>
                         <div class="payment-methods">
-                            {% with selected=form.payment_method.value|default:'any' %}
+                            {% with selected=form.payment_method.value|default:'bank_card' %}
                                 {% for value, label in form.payment_method.field.choices %}
                                     <label class="payment-method">
                                         <input
@@ -86,6 +86,73 @@
                                 {% endfor %}
                             {% endwith %}
                         </div>
+
+                        <div class="payment-details">
+                            <div class="payment-detail" data-payment-detail="bank_card">
+                                <div class="card-mini-form" aria-label="Данные банковской карты">
+                                    <input
+                                        type="text"
+                                        inputmode="numeric"
+                                        autocomplete="off"
+                                        placeholder="Номер карты"
+                                        aria-label="Номер карты"
+                                        maxlength="19"
+                                        data-card-number
+                                        {% if not fake_gateway %}disabled{% endif %}
+                                    >
+                                    <div class="card-mini-row">
+                                        <input
+                                            type="text"
+                                            inputmode="numeric"
+                                            autocomplete="off"
+                                            placeholder="ММ / ГГ"
+                                            aria-label="Срок действия карты"
+                                            maxlength="7"
+                                            data-card-expiry
+                                            {% if not fake_gateway %}disabled{% endif %}
+                                        >
+                                        <input
+                                            type="text"
+                                            inputmode="numeric"
+                                            autocomplete="off"
+                                            placeholder="CVC"
+                                            aria-label="CVC"
+                                            maxlength="3"
+                                            data-card-cvc
+                                            {% if not fake_gateway %}disabled{% endif %}
+                                        >
+                                    </div>
+                                    <input
+                                        type="text"
+                                        autocomplete="off"
+                                        placeholder="Имя на карте"
+                                        aria-label="Имя на карте"
+                                        data-cardholder
+                                        {% if not fake_gateway %}disabled{% endif %}
+                                    >
+                                </div>
+                                <p class="payment-detail-note">
+                                    {% if fake_gateway %}
+                                        Поля нужны только для локального сценария и не отправляются на сервер.
+                                    {% else %}
+                                        Данные карты вводятся на защищенной странице ЮKassa после перехода к оплате.
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            <div class="payment-detail" data-payment-detail="sbp">
+                                <div class="sbp-bank-grid" aria-label="Банк для оплаты через СБП">
+                                    <button class="sbp-bank active" type="button" data-sbp-bank="sberbank" data-bank-url="https://www.sberbank.ru/" aria-pressed="true">Сбербанк</button>
+                                    <button class="sbp-bank" type="button" data-sbp-bank="tbank" data-bank-url="https://www.tbank.ru/" aria-pressed="false">Т-Банк</button>
+                                    <button class="sbp-bank" type="button" data-sbp-bank="alfabank" data-bank-url="https://www.alfabank.ru/" aria-pressed="false">Альфа-Банк</button>
+                                    <button class="sbp-bank" type="button" data-sbp-bank="vtb" data-bank-url="https://www.vtb.ru/" aria-pressed="false">ВТБ</button>
+                                </div>
+                                <p class="payment-detail-note">
+                                    После перехода к оплате откроется сайт выбранного банка.
+                                </p>
+                            </div>
+                        </div>
+
                         {% if form.payment_method.errors %}
                             <ul class="field-errorlist">
                                 {% for error in form.payment_method.errors %}
@@ -147,7 +214,7 @@
         </div>
     </div>
 
-    <script src="{% static 'todo/js/donation.js' %}?v=1"></script>
+    <script src="{% static 'todo/js/donation.js' %}?v=3"></script>
     <script src="{% static 'todo/js/cookie-consent.js' %}"></script>
 
     <div id="cookie-consent-banner" class="cookie-consent hidden">
