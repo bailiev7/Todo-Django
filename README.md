@@ -20,12 +20,14 @@
 
 ### Аутентификация и безопасность
 - 🔐 Регистрация и авторизация пользователей
+- 🌐 Вход и регистрация через Google OAuth
 - 🔑 Восстановление пароля через email
 - 🤖 **Альтернативное восстановление через Telegram-бота**
 - 📱 Привязка Telegram аккаунта в настройках профиля
 - 🛡️ CSRF защита, защита от SQL injection и XSS
 
 ### Интеграции
+- 🌐 **Google OAuth** — социальная авторизация через django-allauth
 - 💬 **Telegram Bot API** — отправка ссылок для сброса пароля
 - 💳 **YooKassa** — система приёма донатов
 - 📧 Email для уведомлений
@@ -118,6 +120,10 @@ DJANGO_EMAIL_HOST_USER=your-email@gmail.com
 DJANGO_EMAIL_HOST_PASSWORD=your-app-password
 DJANGO_EMAIL_USE_TLS=True
 
+# === Google OAuth ===
+GOOGLE_OAUTH_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
+GOOGLE_OAUTH_CLIENT_SECRET=your-google-client-secret
+
 # === Telegram Bot ===
 TELEGRAM_BOT_TOKEN=123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
 TELEGRAM_BOT_USERNAME=your_bot_username
@@ -130,6 +136,22 @@ DONATION_FAKE_GATEWAY=False
 DONATION_CURRENCY=RUB
 DONATION_MIN_AMOUNT=50.00
 DONATION_MAX_AMOUNT=100000.00
+```
+
+### Настройка Google OAuth
+
+1. Откройте [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+2. Создайте OAuth Client ID с типом `Web application`
+3. В `Authorized JavaScript origins` добавьте:
+   - `http://localhost:8000`
+   - ваш production-домен, например `https://yourdomain.com`
+4. В `Authorized redirect URIs` добавьте:
+   - `http://localhost:8000/accounts/google/login/callback/`
+   - `https://yourdomain.com/accounts/google/login/callback/`
+5. Запишите `Client ID` и `Client secret` в `.env`
+6. Выполните миграции после установки зависимости:
+```bash
+docker compose exec web python manage.py migrate
 ```
 
 ### Настройка Telegram Bot
@@ -172,8 +194,8 @@ curl https://api.telegram.org/bot{TOKEN}/getWebhookInfo
 
 1. **Создание аккаунта**
    - Перейдите на главную страницу
-   - Кликните "Создать аккаунт"
-   - Укажите имя пользователя и пароль
+   - Кликните "Создать аккаунт" и укажите имя пользователя, email и пароль
+   - Если Google OAuth настроен, можно сразу продолжить через Google
 
 2. **Управление задачами**
    - Добавляйте новые задачи в левую панель
@@ -272,6 +294,8 @@ mysite/
 | GET | `/` | Главная страница с аутентификацией |
 | POST | `/accounts/register/` | Регистрация нового пользователя |
 | POST | `/accounts/login/` | Авторизация пользователя |
+| POST | `/accounts/google/login/` | Вход или регистрация через Google |
+| GET | `/accounts/google/login/callback/` | OAuth callback от Google |
 | GET | `/accounts/logout/` | Выход из аккаунта |
 | GET | `/tasks/` | Список задач пользователя с фильтрацией |
 | POST | `/tasks/create/` | Создание новой задачи |

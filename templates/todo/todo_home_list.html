@@ -1,4 +1,4 @@
-{% load static %}
+{% load static socialaccount %}
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -96,6 +96,19 @@
                 </div>
 
                 <section class="form-panel" data-panel="login">
+                    {% if google_oauth_enabled %}
+                        <div class="social-auth">
+                            <form method="post" action="{% provider_login_url 'google' process='login' %}">
+                                {% csrf_token %}
+                                <button class="social-auth-button" type="submit" aria-label="Войти через Google">
+                                    <span class="google-mark" aria-hidden="true">G</span>
+                                    <span>Войти через Google</span>
+                                </button>
+                            </form>
+                            <div class="social-divider"><span>или</span></div>
+                        </div>
+                    {% endif %}
+
                     <form method="post" class="form-card {% if login_error %}shake{% endif %}" data-form-kind="login">
                         {% csrf_token %}
                         <input type="hidden" name="form_type" value="login">
@@ -134,6 +147,19 @@
                 </section>
 
                 <section class="form-panel" data-panel="register">
+                    {% if google_oauth_enabled %}
+                        <div class="social-auth">
+                            <form method="post" action="{% provider_login_url 'google' process='login' %}">
+                                {% csrf_token %}
+                                <button class="social-auth-button" type="submit" aria-label="Создать аккаунт через Google">
+                                    <span class="google-mark" aria-hidden="true">G</span>
+                                    <span>Продолжить с Google</span>
+                                </button>
+                            </form>
+                            <div class="social-divider"><span>или</span></div>
+                        </div>
+                    {% endif %}
+
                     <form method="post" class="form-card {% if signup_error %}shake{% endif %}" data-form-kind="register">
                         {% csrf_token %}
                         <input type="hidden" name="form_type" value="register">
@@ -211,4 +237,3 @@
     </div>
 </body>
 </html>
-

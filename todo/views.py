@@ -137,6 +137,7 @@ def todo_home_list(request):
         'active_form': active_form,
         'login_error': login_form.errors if active_form == 'login' else None,
         'signup_error': signup_form.errors if active_form == 'register' else None,
+        'google_oauth_enabled': settings.GOOGLE_OAUTH_CONFIGURED,
     }
     return render(request, 'todo/todo_home_list.html', context)
 
